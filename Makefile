@@ -11,7 +11,7 @@ OUT_TEST = ed25519_cosi_test
 
 TEST_SRC = ed25519_cosi_test.c
 
-.PHONY:all clean
+.PHONY:all clean watch
 
 all: build
 
@@ -27,3 +27,6 @@ build-test: build
 
 check: build-test
 	./$(OUT_TEST)
+
+watch:
+	./watch
