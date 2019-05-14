@@ -1,7 +1,7 @@
-CFLAGS=-I/usr/local/include -Wall
-LDFLAGS=-L/usr/local/lib -lsodium
+CFLAGS=-Wall
+LDFLAGS=-lsodium
 TEST_FLAGS=-lcheck -pthread -lcheck_pic -pthread -lrt -lm -lsubunit
-CC = gcc
+CC = clang
 
 SRC = ed25519_cosi.c
 OUT = ed25519_cosi.o
@@ -22,10 +22,10 @@ clean:
 	rm -f $(OUT)
 	rm -f $(OUT_TEST)
 
-build-test: build
-	$(CC) $(CFLAGS) -o $(OUT_TEST) $(SRC_TEST) $(LDFLAGS) $(TEST_FLAGS)
+build-check: build
+	$(CC) $(CFLAGS) -o $(OUT_TEST) $(SRC_TEST) $(SRC) $(LDFLAGS) $(TEST_FLAGS)
 
-check: build-test
+check: build-check
 	./$(OUT_TEST)
 
 watch:
