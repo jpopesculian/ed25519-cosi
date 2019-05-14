@@ -35,7 +35,7 @@ void ed25519_cosi_challenge(
     memcpy(bytes + 2 * crypto_scalarmult_BYTES, M, m_len);
 
     // hash data
-    crypto_hash_sha256(hash, bytes, bytes_len);
+    crypto_hash_sha512(hash, bytes, bytes_len);
 
     // mod L
     crypto_core_ed25519_scalar_reduce(c, hash);
