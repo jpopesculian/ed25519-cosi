@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #ifndef ED25519_COSI_H
 #define ED25519_COSI_H
 
@@ -15,13 +17,40 @@ extern "C"{
 void ed25519_cosi_commit(unsigned char *R, unsigned char *r);
 
 /*
+ * Add public key to a collective public key
+ *
+ * @param A_sum: the sum of the public keys [crypto_scalarmult_BYTES]
+ * @param A: a singular public key to add to the sum [crypto_scalarmult_BYTES]
+ * @returns void
+ */
+void ed25519_cosi_update_public_key(unsigned char *A_sum, unsigned const char *A);
+
+/*
  * Add commit message to commit sum
  *
  * @param R_sum: the sum of the commits [crypto_scalarmult_BYTES]
  * @param R: a singular commit to add to the sum [crypto_scalarmult_BYTES]
  * @returns void
  */
-void ed25519_cosi_update_commits(unsigned char *R_sum, unsigned const char *R);
+void ed25519_cosi_update_commit(unsigned char *R_sum, unsigned const char *R);
+
+/*
+ * Create cosi challenge
+ *
+ * @param c: output of challenge [64 bytes?]
+ * @param R: aggregate commitments [crypto_scalarmult_BYTES]
+ * @param A: collective public key [???]
+ * @param M: message to be signed
+ * @param m_len: length of message to be signed
+ * @returns void
+ */
+void ed25519_cosi_challenge(
+    unsigned char *c,
+    unsigned const char *R,
+    unsigned const char *A,
+    unsigned const char *M,
+    size_t m_len
+);
 
 #ifdef __cplusplus
 }

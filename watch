@@ -1,7 +1,9 @@
 #!/bin/bash
 
 function block_for_change {
-  inotifywait --recursive --event modify,move,create,delete .
+  inotifywait --recursive --event modify,move,create,delete \
+      --excludei .git* --quiet \
+      *.c *.h Makefile
 }
 function build {
     make check

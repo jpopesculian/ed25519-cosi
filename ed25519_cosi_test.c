@@ -4,20 +4,41 @@
 #include <check.h>
 #include "ed25519_cosi.h"
 
-START_TEST(ed25519_cosi_commit_sum)
+unsigned const char pk1[] = {29, 79, 210, 207, 9, 227, 16, 185, 127, 54, 203, 220, 206, 26, 193, 31, 9, 45, 252, 131, 218, 148, 57, 4, 74, 5, 200, 63, 55, 242, 157, 157};
+unsigned const char sk1[] = {72, 135, 232, 96, 132, 97, 196, 213, 199, 247, 191, 175, 93, 160, 12, 96, 174, 94, 246, 20, 215, 10, 187, 14, 221, 43, 213, 104, 66, 90, 40, 48, 29, 79, 210, 207, 9, 227, 16, 185, 127, 54, 203, 220, 206, 26, 193, 31, 9, 45, 252, 131, 218, 148, 57, 4, 74, 5, 200, 63, 55, 242, 157, 157};
+unsigned const char pk2[] = {132, 238, 113, 249, 153, 177, 241, 241, 33, 88, 68, 157, 48, 53, 189, 81, 218, 127, 103, 158, 43, 26, 35, 225, 159, 73, 96, 91, 3, 120, 81, 11};
+unsigned const char sk2[] = {54, 147, 9, 101, 220, 132, 212, 109, 227, 5, 144, 238, 207, 20, 228, 178, 0, 150, 254, 113, 141, 198, 2, 207, 112, 50, 175, 211, 121, 183, 72, 38, 132, 238, 113, 249, 153, 177, 241, 241, 33, 88, 68, 157, 48, 53, 189, 81, 218, 127, 103, 158, 43, 26, 35, 225, 159, 73, 96, 91, 3, 120, 81, 11};
+unsigned const char pk3[] = {253, 137, 235, 90, 142, 167, 201, 25, 193, 27, 252, 129, 43, 68, 249, 225, 38, 27, 116, 23, 1, 222, 196, 49, 198, 111, 125, 117, 135, 196, 145, 250};
+unsigned const char sk3[] = {19, 117, 36, 235, 68, 39, 94, 150, 197, 113, 95, 145, 225, 66, 26, 90, 45, 76, 87, 24, 80, 25, 177, 67, 105, 190, 241, 51, 122, 52, 41, 238, 253, 137, 235, 90, 142, 167, 201, 25, 193, 27, 252, 129, 43, 68, 249, 225, 38, 27, 116, 23, 1, 222, 196, 49, 198, 111, 125, 117, 135, 196, 145, 250};
+unsigned const char pk[] = {20, 66, 142, 18, 3, 173, 178, 25, 160, 5, 96, 233, 250, 176, 141, 187, 16, 21, 132, 65, 161, 75, 184, 213, 138, 241, 3, 137, 247, 197, 101, 94};
+unsigned const char r1[] = {254, 69, 102, 175, 20, 169, 50, 183, 225, 19, 111, 165, 203, 215, 238, 201, 117, 153, 244, 209, 212, 53, 228, 74, 142, 89, 35, 101, 27, 196, 186, 8};
+unsigned const char commit1[] = {86, 1, 52, 208, 127, 94, 216, 95, 22, 201, 121, 53, 75, 6, 23, 116, 203, 6, 46, 11, 139, 34, 189, 116, 6, 31, 118, 17, 241, 170, 31, 92};
+unsigned const char r2[] = {106, 152, 233, 186, 17, 246, 162, 111, 253, 225, 66, 152, 205, 134, 107, 67, 2, 25, 156, 179, 188, 86, 91, 190, 18, 121, 100, 49, 159, 185, 104, 9};
+unsigned const char commit2[] = {77, 87, 108, 37, 120, 67, 51, 13, 162, 30, 213, 35, 27, 93, 64, 130, 184, 162, 147, 72, 126, 251, 185, 174, 198, 168, 240, 207, 15, 101, 180, 216};
+unsigned const char r3[] = {221, 0, 161, 118, 94, 150, 132, 108, 114, 117, 74, 17, 234, 201, 51, 1, 27, 181, 168, 251, 64, 20, 107, 149, 146, 142, 222, 191, 47, 139, 49, 12};
+unsigned const char commit3[] = {233, 245, 17, 84, 240, 241, 215, 147, 250, 215, 83, 78, 16, 62, 85, 209, 225, 196, 237, 48, 81, 26, 64, 72, 85, 73, 64, 8, 35, 87, 239, 218};
+unsigned const char commit[] = {217, 13, 12, 0, 199, 125, 36, 89, 35, 69, 125, 67, 180, 199, 148, 22, 179, 112, 251, 191, 83, 216, 114, 1, 112, 228, 135, 115, 175, 28, 15, 28};
+
+START_TEST(ed25519_pk_sum)
 {
-    unsigned const char first[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-    unsigned const char second[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2};
-    unsigned const char third[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3};
-    unsigned const char sum[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6};
+    unsigned char A_sum[crypto_scalarmult_BYTES];
+    memcpy(A_sum, pk1, crypto_scalarmult_BYTES);
+    ed25519_cosi_update_public_key(A_sum, pk2);
+    ed25519_cosi_update_public_key(A_sum, pk3);
 
+    int res = memcmp(A_sum, pk, crypto_scalarmult_BYTES);
+    ck_assert_int_eq(0, res);
+}
+END_TEST
+
+START_TEST(ed25519_commit_sum)
+{
     unsigned char R_sum[crypto_scalarmult_BYTES];
-    memset(R_sum, 0, crypto_scalarmult_BYTES);
-    ed25519_cosi_update_commits(R_sum, first);
-    ed25519_cosi_update_commits(R_sum, second);
-    ed25519_cosi_update_commits(R_sum, third);
+    memcpy(R_sum, commit1, crypto_scalarmult_BYTES);
+    ed25519_cosi_update_public_key(R_sum, commit2);
+    ed25519_cosi_update_public_key(R_sum, commit3);
 
-    int res = memcmp(R_sum, sum, crypto_scalarmult_BYTES);
+    int res = memcmp(R_sum, commit, crypto_scalarmult_BYTES);
     ck_assert_int_eq(0, res);
 }
 END_TEST
@@ -31,11 +52,14 @@ int main(void)
 
     suite_add_tcase(s1, tc1_1);
 
-    tcase_add_test(tc1_1, ed25519_cosi_commit_sum);
+    tcase_add_test(tc1_1, ed25519_pk_sum);
+    tcase_add_test(tc1_1, ed25519_commit_sum);
 
+    printf("\n");
     srunner_run_all(sr, CK_ENV);
     nf = srunner_ntests_failed(sr);
     srunner_free(sr);
+    printf("\n");
 
     return nf == 0 ? 0 : 1;
 }
