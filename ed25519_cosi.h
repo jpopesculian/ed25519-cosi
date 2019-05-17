@@ -88,10 +88,10 @@ void ed25519_cosi_update_response(unsigned char *s_sum, unsigned const char *s);
  * Initialize a mask to all disabled
  *
  * @param Z: the mask
- * @param len: the number of participants
+ * @param z_len: length of max in bytes
  * @return void
  */
-void ed25519_cosi_mask_init(unsigned char *Z, size_t len);
+void ed25519_cosi_mask_init(unsigned char *Z, size_t z_len);
 
 /*
  * Enable a participant as a cosigner
@@ -111,6 +111,24 @@ void ed25519_cosi_mask_enable(unsigned char *Z, size_t which);
  * @return void
  */
 void ed25519_cosi_mask_disable(unsigned char *Z, size_t which);
+
+/*
+ * Put signature components togeter
+ *
+ * @param S: output of the signature [2 * crypt_scalarmult_BYTES + z_len]
+ * @param R: aggregate commits [crypto_scalarmult_BYTES]
+ * @param s_sum: aggregate responses [crypto_scalarmult_BYTES]
+ * @param Z: signing mask
+ * @param z_len: length of signing mask
+ * @return void
+ */
+void ed25519_cosi_signature(
+    unsigned char *S,
+    unsigned const char *R,
+    unsigned const char *s_sum,
+    unsigned const char *Z,
+    size_t z_len
+);
 
 #ifdef __cplusplus
 }

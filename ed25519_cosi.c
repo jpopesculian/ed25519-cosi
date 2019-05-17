@@ -3,6 +3,8 @@
 #include <sodium.h>
 #include <string.h>
 
+unsigned const char ED25519_COSI_SC_ONE[] = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
 void ed25519_cosi_commit(unsigned char *R, unsigned char *r) {
     randombytes_buf(r, crypto_core_ed25519_SCALARBYTES);
     crypto_scalarmult_ed25519_base(R, r);
@@ -69,11 +71,12 @@ void ed25519_cosi_response(
 }
 
 void ed25519_cosi_update_response(unsigned char *s_sum, unsigned const char *s) {
-    ed25519_cosi_update_public_key(s_sum, s);
+    crypto_core_ed25519_scalar_mul(s_sum, s_sum, ED25519_COSI_SC_ONE);
+    crypto_core_ed25519_scalar_add(s_sum, s_sum, s);
 }
 
-void ed25519_cosi_mask_init(unsigned char *Z, size_t len) {
-    memset(Z, 255, ed25519_cosi_mask_len(len));
+void ed25519_cosi_mask_init(unsigned char *Z, size_t z_len) {
+    memset(Z, 255, z_len);
 }
 
 void ed25519_cosi_mask_enable(unsigned char *Z, size_t which) {
@@ -86,4 +89,17 @@ void ed25519_cosi_mask_disable(unsigned char *Z, size_t which) {
     size_t byte = which >> 3;
     size_t bit = 1 << (which & 7);
     Z[byte] = Z[byte] | bit;
+}
+
+void ed25519_cosi_signature(
+    unsigned char *S,
+    unsigned const char *R,
+    unsigned const char *s_sum,
+    unsigned const char *Z,
+    size_t z_len
+) {
+    // concatenate data
+    memcpy(S, R, crypto_scalarmult_BYTES);
+    memcpy(S + crypto_scalarmult_BYTES, s_sum, crypto_scalarmult_BYTES);
+    memcpy(S + 2 * crypto_scalarmult_BYTES, Z, z_len);
 }
