@@ -41,6 +41,11 @@ unsigned const char commit[] = {217, 13, 12, 0, 199, 125, 36, 89, 35, 69, 125, 6
 // challenge for commit with all
 unsigned const char challenge[] = {125, 88, 145, 120, 145, 63, 17, 247, 209, 169, 186, 44, 247, 102, 178, 71, 16, 116, 28, 80, 5, 42, 152, 116, 53, 55, 214, 6, 196, 3, 201, 7};
 
+// signature parts
+unsigned const char s1[] = {123, 13, 126, 83, 148, 3, 106, 76, 217, 19, 123, 79, 66, 177, 20, 115, 219, 29, 221, 74, 230, 132, 17, 26, 178, 57, 80, 165, 49, 56, 216, 7};
+unsigned const char s2[] = {1, 202, 80, 62, 192, 8, 132, 185, 64, 161, 212, 147, 224, 132, 170, 107, 211, 208, 28, 20, 67, 56, 31, 140, 219, 92, 141, 134, 187, 200, 210, 10};
+unsigned const char s3[] = {216, 74, 248, 208, 164, 121, 226, 81, 105, 223, 46, 183, 81, 231, 2, 158, 97, 221, 62, 75, 99, 64, 110, 114, 221, 20, 18, 2, 35, 172, 188, 1};
+
 START_TEST(ed25519_pk_sum)
 {
     unsigned char A_sum[crypto_scalarmult_BYTES];
@@ -48,8 +53,7 @@ START_TEST(ed25519_pk_sum)
     ed25519_cosi_update_public_key(A_sum, pk2);
     ed25519_cosi_update_public_key(A_sum, pk3);
 
-    int res = memcmp(A_sum, pk, crypto_scalarmult_BYTES);
-    ck_assert_int_eq(0, res);
+    ck_assert(!sodium_compare(A_sum, pk, crypto_scalarmult_BYTES));
 }
 END_TEST
 
@@ -60,8 +64,7 @@ START_TEST(ed25519_commit_sum)
     ed25519_cosi_update_public_key(R_sum, commit2);
     ed25519_cosi_update_public_key(R_sum, commit3);
 
-    int res = memcmp(R_sum, commit, crypto_scalarmult_BYTES);
-    ck_assert_int_eq(0, res);
+    ck_assert(!sodium_compare(R_sum, commit, crypto_scalarmult_BYTES));
 }
 END_TEST
 
@@ -70,8 +73,7 @@ START_TEST(ed25519_challenge_create)
     unsigned char c[crypto_scalarmult_BYTES];
     ed25519_cosi_challenge(c, commit, pk, message, m_len);
 
-    int res = memcmp(c, challenge, crypto_scalarmult_BYTES);
-    ck_assert_int_eq(0, res);
+    ck_assert(!sodium_compare(c, challenge, crypto_scalarmult_BYTES));
 }
 END_TEST
 
@@ -80,13 +82,16 @@ START_TEST(ed25519_response_create)
     unsigned char s[crypto_scalarmult_BYTES];
     ed25519_cosi_response(s, challenge, sk1, r1);
 
-    /* int res = memcmp(c, challenge, crypto_scalarmult_BYTES); */
-    /* ck_assert_int_eq(0, res); */
+    ck_assert(!sodium_compare(s, s1, crypto_scalarmult_BYTES));
 }
 END_TEST
 
 int main(void)
 {
+    if (sodium_init() < 0) {
+        return 1;
+    }
+
     Suite *s1 = suite_create("Core");
     TCase *tc1_1 = tcase_create("Core");
     SRunner *sr = srunner_create(s1);

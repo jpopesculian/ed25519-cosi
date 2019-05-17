@@ -4,7 +4,7 @@
 #include <string.h>
 
 void ed25519_cosi_commit(unsigned char *R, unsigned char *r) {
-    crypto_core_ed25519_scalar_random(r);
+    randombytes_buf(r, crypto_core_ed25519_SCALARBYTES);
     crypto_scalarmult_ed25519_base(R, r);
 }
 
@@ -59,43 +59,11 @@ void ed25519_cosi_response(
     unsigned const char *a,
     unsigned const char *r
 ) {
+    // expand secret
     unsigned char h[crypto_scalarmult_BYTES];
     ed25519_cosi_expand_secret(h, a);
 
-    crypto_scalarmult_ed25519(s, c, h);
-    crypto_core_ed25519_scalar_add(s, r, s);
-
-    int i = 0;
-
-    printf("c [");
-    i = 0;
-    while (i < 32) {
-        printf("%d ", c[i]);
-        i++;
-    }
-    printf("]\n");
-
-    printf("a [");
-    i = 0;
-    while (i < 32) {
-        printf("%d ", h[i]);
-        i++;
-    }
-    printf("]\n");
-
-    printf("r [");
-    i = 0;
-    while (i < 32) {
-        printf("%d ", r[i]);
-        i++;
-    }
-    printf("]\n");
-
-    printf("s [");
-    i = 0;
-    while (i < 32) {
-        printf("%d ", s[i]);
-        i++;
-    }
-    printf("]\n");
+    // (r + c * a) mod L
+    crypto_core_ed25519_scalar_mul(s, c, h);
+    crypto_core_ed25519_scalar_add(s, s, r);
 }
