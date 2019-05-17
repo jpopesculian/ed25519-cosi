@@ -37,9 +37,9 @@ void ed25519_cosi_update_commit(unsigned char *R_sum, unsigned const char *R);
 /*
  * Create cosi challenge
  *
- * @param c: output of challenge [64 bytes?]
+ * @param c: output of challenge [crypto_scalarmult_BYTES]
  * @param R: aggregate commitments [crypto_scalarmult_BYTES]
- * @param A: collective public key [???]
+ * @param A: collective public key [crypto_scalarmult_BYTES]
  * @param M: message to be signed
  * @param m_len: length of message to be signed
  * @returns void
@@ -50,6 +50,22 @@ void ed25519_cosi_challenge(
     unsigned const char *A,
     unsigned const char *M,
     size_t m_len
+);
+
+/*
+ * Create cosi response (signature part)
+ *
+ * @param s: output of response [crypto_scalarmult_BYTES]
+ * @param c: generated challenge [crypto_scalarmult_BYTES]
+ * @param a: private key of participant [crypto_core_ed25519_SCALARBYTES]
+ * @param r: private nonce of commitment [crypto_core_ed25519_SCALARBYTES]
+ * @returns void
+ */
+void ed25519_cosi_response(
+    unsigned char *s,
+    unsigned const char *c,
+    unsigned const char *a,
+    unsigned const char *r
 );
 
 #ifdef __cplusplus

@@ -75,6 +75,16 @@ START_TEST(ed25519_challenge_create)
 }
 END_TEST
 
+START_TEST(ed25519_response_create)
+{
+    unsigned char s[crypto_scalarmult_BYTES];
+    ed25519_cosi_response(s, challenge, sk1, r1);
+
+    /* int res = memcmp(c, challenge, crypto_scalarmult_BYTES); */
+    /* ck_assert_int_eq(0, res); */
+}
+END_TEST
+
 int main(void)
 {
     Suite *s1 = suite_create("Core");
@@ -87,6 +97,7 @@ int main(void)
     tcase_add_test(tc1_1, ed25519_pk_sum);
     tcase_add_test(tc1_1, ed25519_commit_sum);
     tcase_add_test(tc1_1, ed25519_challenge_create);
+    tcase_add_test(tc1_1, ed25519_response_create);
 
     printf("\n");
     srunner_run_all(sr, CK_ENV);

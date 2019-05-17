@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include <string.h>
-#include <sodium.h>
 #include "ed25519_cosi.h"
+#include <sodium.h>
+#include <string.h>
 
 void ed25519_cosi_commit(unsigned char *R, unsigned char *r) {
     crypto_core_ed25519_scalar_random(r);
-    crypto_scalarmult_base(R, r);
+    crypto_scalarmult_ed25519_base(R, r);
 }
 
 void ed25519_cosi_update_public_key(unsigned char *A_sum, unsigned const char *A) {
@@ -42,4 +42,60 @@ void ed25519_cosi_challenge(
 
     // free memory
     free(bytes);
+}
+
+void ed25519_cosi_expand_secret(unsigned char *h, unsigned const char *a) {
+    unsigned char digest[64];
+    crypto_hash_sha512(digest, a, crypto_scalarmult_BYTES);
+    memcpy(h, digest, crypto_scalarmult_BYTES);
+    h[0] = h[0] & 248;
+    h[31] = h[31] & 63;
+    h[31] = h[31] | 64;
+}
+
+void ed25519_cosi_response(
+    unsigned char *s,
+    unsigned const char *c,
+    unsigned const char *a,
+    unsigned const char *r
+) {
+    unsigned char h[crypto_scalarmult_BYTES];
+    ed25519_cosi_expand_secret(h, a);
+
+    crypto_scalarmult_ed25519(s, c, h);
+    crypto_core_ed25519_scalar_add(s, r, s);
+
+    int i = 0;
+
+    printf("c [");
+    i = 0;
+    while (i < 32) {
+        printf("%d ", c[i]);
+        i++;
+    }
+    printf("]\n");
+
+    printf("a [");
+    i = 0;
+    while (i < 32) {
+        printf("%d ", h[i]);
+        i++;
+    }
+    printf("]\n");
+
+    printf("r [");
+    i = 0;
+    while (i < 32) {
+        printf("%d ", r[i]);
+        i++;
+    }
+    printf("]\n");
+
+    printf("s [");
+    i = 0;
+    while (i < 32) {
+        printf("%d ", s[i]);
+        i++;
+    }
+    printf("]\n");
 }
