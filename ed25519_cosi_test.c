@@ -86,6 +86,37 @@ START_TEST(ed25519_response_create)
 }
 END_TEST
 
+START_TEST(ed25519_mask_creation)
+{
+    size_t len = 12;
+    size_t bytes = ed25519_cosi_mask_len(len);
+    ck_assert_int_eq(bytes, 2);
+    unsigned char res[bytes];
+    unsigned char Z[bytes];
+
+    ed25519_cosi_mask_init(Z, len);
+    res[0] = 255;
+    res[1] = 255;
+    ck_assert(!memcmp(Z, res, 2));
+
+    ed25519_cosi_mask_enable(Z, 2);
+    res[0] = 251;
+    ck_assert(!memcmp(Z, res, 2));
+
+    ed25519_cosi_mask_enable(Z, 11);
+    res[1] = 247;
+    ck_assert(!memcmp(Z, res, 2));
+
+    ed25519_cosi_mask_enable(Z, 10);
+    res[1] = 243;
+    ck_assert(!memcmp(Z, res, 2));
+
+    ed25519_cosi_mask_disable(Z, 10);
+    res[1] = 247;
+    ck_assert(!memcmp(Z, res, 2));
+}
+END_TEST
+
 int main(void)
 {
     if (sodium_init() < 0) {
@@ -103,6 +134,7 @@ int main(void)
     tcase_add_test(tc1_1, ed25519_commit_sum);
     tcase_add_test(tc1_1, ed25519_challenge_create);
     tcase_add_test(tc1_1, ed25519_response_create);
+    tcase_add_test(tc1_1, ed25519_mask_creation);
 
     printf("\n");
     srunner_run_all(sr, CK_ENV);

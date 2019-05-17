@@ -67,3 +67,23 @@ void ed25519_cosi_response(
     crypto_core_ed25519_scalar_mul(s, c, h);
     crypto_core_ed25519_scalar_add(s, s, r);
 }
+
+void ed25519_cosi_update_response(unsigned char *s_sum, unsigned const char *s) {
+    ed25519_cosi_update_public_key(s_sum, s);
+}
+
+void ed25519_cosi_mask_init(unsigned char *Z, size_t len) {
+    memset(Z, 255, ed25519_cosi_mask_len(len));
+}
+
+void ed25519_cosi_mask_enable(unsigned char *Z, size_t which) {
+    size_t byte = which >> 3;
+    size_t bit = 1 << (which & 7);
+    Z[byte] = Z[byte] & ~bit;
+}
+
+void ed25519_cosi_mask_disable(unsigned char *Z, size_t which) {
+    size_t byte = which >> 3;
+    size_t bit = 1 << (which & 7);
+    Z[byte] = Z[byte] | bit;
+}

@@ -8,6 +8,13 @@ extern "C"{
 #endif
 
 /*
+ * Length of a Collective Signature mask in bytes
+ *
+ * @param len: total number of participants
+ */
+#define ed25519_cosi_mask_len(len) ((len + 7) >> 3)
+
+/*
  * Commit to signature process
  *
  * @param R: public commitment to be sent to Leader [crypto_scalarmult_BYTES]
@@ -67,6 +74,43 @@ void ed25519_cosi_response(
     unsigned const char *a,
     unsigned const char *r
 );
+
+/*
+ * Add signature parts to the collective signature parts
+ *
+ * @param s_sum: the sum of the signature parts [crypto_scalarmult_BYTES]
+ * @param s: a signature part to add to the sum [crypto_scalarmult_BYTES]
+ * @returns void
+ */
+void ed25519_cosi_update_response(unsigned char *s_sum, unsigned const char *s);
+
+/*
+ * Initialize a mask to all disabled
+ *
+ * @param Z: the mask
+ * @param len: the number of participants
+ * @return void
+ */
+void ed25519_cosi_mask_init(unsigned char *Z, size_t len);
+
+/*
+ * Enable a participant as a cosigner
+ *
+ * @param Z: the mask
+ * @param which: the participant number to enable
+ * @return void
+ */
+void ed25519_cosi_mask_enable(unsigned char *Z, size_t which);
+
+
+/*
+ * Disable a participant as a cosigner
+ *
+ * @param Z: the mask
+ * @param which: the participant number to enable
+ * @return void
+ */
+void ed25519_cosi_mask_disable(unsigned char *Z, size_t which);
 
 #ifdef __cplusplus
 }
