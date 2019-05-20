@@ -162,7 +162,6 @@ bool ed25519_cosi_valid_signature(
 
     unsigned char c[ed25519_cosi_CHALLENGEBYTES];
     unsigned char T[crypto_sign_ed25519_PUBLICKEYBYTES];
-    unsigned char eight[crypto_scalarmult_ed25519_BYTES];
     unsigned char right[crypto_scalarmult_ed25519_BYTES];
     unsigned char left[crypto_scalarmult_ed25519_BYTES];
 
@@ -187,9 +186,6 @@ bool ed25519_cosi_valid_signature(
         }
     }
     crypto_core_ed25519_sub(T, A, T);
-
-    memcpy(eight, ed25519_cosi_SC_ONE, crypto_scalarmult_ed25519_BYTES);
-    eight[0] = 8;
 
     // [8][c]T
     if (crypto_scalarmult_ed25519_noclamp(T, c, T)) {
