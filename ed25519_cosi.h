@@ -74,8 +74,8 @@ void ed25519_cosi_commit(unsigned char *R, unsigned char *r);
 /*
  * Add public key to a collective public key
  *
- * @param A_sum: the sum of the public keys [crypto_sign_PUBLICKEYBYTES]
- * @param A: a singular public key to add to the sum [crypto_sign_PUBLICKEYBYTES]
+ * @param A_sum: the sum of the public keys [crypto_sign_ed25519_PUBLICKEYBYTES]
+ * @param A: a singular public key to add to the sum [crypto_sign_ed25519_PUBLICKEYBYTES]
  * @returns void
  */
 void ed25519_cosi_update_public_key(unsigned char *A_sum, unsigned const char *A);
@@ -94,7 +94,7 @@ void ed25519_cosi_update_commit(unsigned char *R_sum, unsigned const char *R);
  *
  * @param c: output of challenge [ed25519_cosi_CHALLENGEBYTES]
  * @param R: aggregate commitments [ed25519_cosi_COMMITBYTES]
- * @param A: collective public key [crypto_sign_PUBLICKEYBYTES]
+ * @param A: collective public key [crypto_sign_ed25519_PUBLICKEYBYTES]
  * @param M: message to be signed
  * @param m_len: length of message to be signed
  * @returns void
@@ -112,7 +112,7 @@ void ed25519_cosi_challenge(
  *
  * @param s: output of response [ed25519_cosi_RESPONSEBYTES]
  * @param c: generated challenge [ed25519_cosi_CHALLENGEBYTES]
- * @param a: private key of participant [crypto_sign_SECRETKEYBYTES]
+ * @param a: private key of participant [crypto_sign_ed25519_SECRETKEYBYTES]
  * @param r: private nonce of commitment [ed25519_cosi_NONCEBYTES]
  * @returns void
  */

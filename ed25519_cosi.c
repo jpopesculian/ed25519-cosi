@@ -23,15 +23,15 @@ unsigned const char ed25519_cosi_SC_EIGHT[] = {
 
 void ed25519_cosi_commit(unsigned char *R, unsigned char *r) {
     // create secret key
-    unsigned char sk[crypto_sign_SECRETKEYBYTES];
-    randombytes_buf(sk, crypto_sign_SECRETKEYBYTES);
+    unsigned char sk[crypto_sign_ed25519_SECRETKEYBYTES];
+    randombytes_buf(sk, crypto_sign_ed25519_SECRETKEYBYTES);
 
     // create scalar and point
     crypto_core_ed25519_scalar_reduce(r, sk);
     crypto_scalarmult_ed25519_base_noclamp(R, r);
 
     // zero out unused memory
-    sodium_memzero(sk, crypto_sign_SECRETKEYBYTES);
+    sodium_memzero(sk, crypto_sign_ed25519_SECRETKEYBYTES);
 }
 
 void ed25519_cosi_update_public_key(unsigned char *A_sum, unsigned const char *A) {
@@ -52,13 +52,13 @@ void ed25519_cosi_challenge(
     unsigned char hash[crypto_hash_sha256_BYTES];
 
     // allocate memory
-    size_t bytes_len = ed25519_cosi_COMMITBYTES + crypto_sign_PUBLICKEYBYTES + m_len;
+    size_t bytes_len = ed25519_cosi_COMMITBYTES + crypto_sign_ed25519_PUBLICKEYBYTES + m_len;
     unsigned char *bytes = sodium_malloc(bytes_len);
 
     // concatenate data
     memcpy(bytes, R, ed25519_cosi_COMMITBYTES);
-    memcpy(bytes + ed25519_cosi_COMMITBYTES, A, crypto_sign_PUBLICKEYBYTES);
-    memcpy(bytes + ed25519_cosi_COMMITBYTES + crypto_sign_PUBLICKEYBYTES, M, m_len);
+    memcpy(bytes + ed25519_cosi_COMMITBYTES, A, crypto_sign_ed25519_PUBLICKEYBYTES);
+    memcpy(bytes + ed25519_cosi_COMMITBYTES + crypto_sign_ed25519_PUBLICKEYBYTES, M, m_len);
 
     // hash data
     crypto_hash_sha512(hash, bytes, bytes_len);
@@ -163,7 +163,7 @@ bool ed25519_cosi_valid_signature(
     unsigned const char *s_sum = S + ed25519_cosi_COMMITBYTES;
 
     unsigned char c[ed25519_cosi_CHALLENGEBYTES];
-    unsigned char T[crypto_sign_PUBLICKEYBYTES];
+    unsigned char T[crypto_sign_ed25519_PUBLICKEYBYTES];
     unsigned char eight[crypto_scalarmult_ed25519_BYTES];
     unsigned char right[crypto_scalarmult_ed25519_BYTES];
     unsigned char left[crypto_scalarmult_ed25519_BYTES];

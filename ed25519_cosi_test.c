@@ -75,13 +75,13 @@ END_TEST
 
 START_TEST(ed25519_pk_sum)
 {
-    unsigned char A_sum[crypto_sign_PUBLICKEYBYTES];
-    memcpy(A_sum, ed25519_cosi_SC_ONE, crypto_sign_PUBLICKEYBYTES);
+    unsigned char A_sum[crypto_sign_ed25519_PUBLICKEYBYTES];
+    memcpy(A_sum, ed25519_cosi_SC_ONE, crypto_sign_ed25519_PUBLICKEYBYTES);
     ed25519_cosi_update_public_key(A_sum, pk1);
     ed25519_cosi_update_public_key(A_sum, pk2);
     ed25519_cosi_update_public_key(A_sum, pk3);
 
-    ck_assert(!sodium_compare(A_sum, pk, crypto_sign_PUBLICKEYBYTES));
+    ck_assert(!sodium_compare(A_sum, pk, crypto_sign_ed25519_PUBLICKEYBYTES));
 }
 END_TEST
 
@@ -219,15 +219,31 @@ START_TEST(ed25519_sig_valid)
     public_key_db_set(0, pk1);
     public_key_db_set(1, pk2);
     public_key_db_set(2, pk3);
-    ck_assert(ed25519_cosi_valid_signature(
-        message,
-        m_len,
-        pk,
-        public_key_db_get,
-        sig,
-        65,
-        3
-    ));
+    ck_assert(ed25519_cosi_valid_signature(message, m_len, pk, public_key_db_get, sig, 65, 3));
+}
+END_TEST
+
+START_TEST(ed25519_sig_R_invalid)
+{
+    unsigned char tsig[ed25519_cosi_sig_len_for_n(3)];
+    memcpy(tsig, sig, ed25519_cosi_sig_len_for_n(3));
+    tsig[0] = 0xff;
+    public_key_db_set(0, pk1);
+    public_key_db_set(1, pk2);
+    public_key_db_set(2, pk3);
+    ck_assert(!ed25519_cosi_valid_signature(message, m_len, pk, public_key_db_get, tsig, 65, 3));
+}
+END_TEST
+
+START_TEST(ed25519_sig_s_invalid)
+{
+    unsigned char tsig[ed25519_cosi_sig_len_for_n(3)];
+    memcpy(tsig, sig, ed25519_cosi_sig_len_for_n(3));
+    tsig[33] = 0xff;
+    public_key_db_set(0, pk1);
+    public_key_db_set(1, pk2);
+    public_key_db_set(2, pk3);
+    ck_assert(!ed25519_cosi_valid_signature(message, m_len, pk, public_key_db_get, tsig, 65, 3));
 }
 END_TEST
 
@@ -235,16 +251,16 @@ START_TEST(ed25519_sig_random)
 {
     // each participant generates keypairs
 
-    unsigned char tpk1[crypto_sign_PUBLICKEYBYTES];
-    unsigned char tsk1[crypto_sign_SECRETKEYBYTES];
+    unsigned char tpk1[crypto_sign_ed25519_PUBLICKEYBYTES];
+    unsigned char tsk1[crypto_sign_ed25519_SECRETKEYBYTES];
     crypto_sign_ed25519_keypair(tpk1, tsk1);
 
-    unsigned char tpk2[crypto_sign_PUBLICKEYBYTES];
-    unsigned char tsk2[crypto_sign_SECRETKEYBYTES];
+    unsigned char tpk2[crypto_sign_ed25519_PUBLICKEYBYTES];
+    unsigned char tsk2[crypto_sign_ed25519_SECRETKEYBYTES];
     crypto_sign_ed25519_keypair(tpk2, tsk2);
 
-    unsigned char tpk3[crypto_sign_PUBLICKEYBYTES];
-    unsigned char tsk3[crypto_sign_SECRETKEYBYTES];
+    unsigned char tpk3[crypto_sign_ed25519_PUBLICKEYBYTES];
+    unsigned char tsk3[crypto_sign_ed25519_SECRETKEYBYTES];
     crypto_sign_ed25519_keypair(tpk3, tsk3);
 
     public_key_db_set(0, tpk1);
@@ -253,8 +269,8 @@ START_TEST(ed25519_sig_random)
 
     // aggergate key pairs
 
-    unsigned char A[crypto_sign_PUBLICKEYBYTES];
-    memcpy(A, tpk1, crypto_sign_PUBLICKEYBYTES);
+    unsigned char A[crypto_sign_ed25519_PUBLICKEYBYTES];
+    memcpy(A, tpk1, crypto_sign_ed25519_PUBLICKEYBYTES);
     ed25519_cosi_update_public_key(A, tpk2);
     ed25519_cosi_update_public_key(A, tpk3);
 
@@ -405,6 +421,8 @@ int main(void)
     tcase_add_test(tc1_2, ed25519_sig_did_sign);
     tcase_add_test(tc1_2, ed25519_num_sigs);
     tcase_add_test(tc1_2, ed25519_sig_valid);
+    tcase_add_test(tc1_2, ed25519_sig_R_invalid);
+    tcase_add_test(tc1_2, ed25519_sig_s_invalid);
     tcase_add_test(tc1_2, ed25519_sig_random);
 
     printf("\n");
