@@ -52,54 +52,65 @@ unsigned const char s[] = {103, 78, 209, 5, 223, 34, 190, 255, 172, 247, 134, 24
 // signature
 unsigned const char sig[] = {217, 13, 12, 0, 199, 125, 36, 89, 35, 69, 125, 67, 180, 199, 148, 22, 179, 112, 251, 191, 83, 216, 114, 1, 112, 228, 135, 115, 175, 28, 15, 28, 103, 78, 209, 5, 223, 34, 190, 255, 172, 247, 134, 247, 149, 35, 227, 103, 16, 204, 56, 170, 140, 253, 158, 24, 107, 171, 239, 45, 16, 173, 103, 4, 248};
 
+START_TEST(ed25519_commit_generate)
+{
+    unsigned char R[ed25519_cosi_COMMITBYTES];
+    unsigned char r[ed25519_cosi_NONCEBYTES];
+
+    ed25519_cosi_commit(R, r);
+
+    ck_assert(crypto_core_ed25519_is_valid_point(R));
+}
+END_TEST
+
 START_TEST(ed25519_pk_sum)
 {
-    unsigned char A_sum[crypto_scalarmult_BYTES];
-    memcpy(A_sum, pk1, crypto_scalarmult_BYTES);
+    unsigned char A_sum[crypto_sign_PUBLICKEYBYTES];
+    memcpy(A_sum, pk1, crypto_sign_PUBLICKEYBYTES);
     ed25519_cosi_update_public_key(A_sum, pk2);
     ed25519_cosi_update_public_key(A_sum, pk3);
 
-    ck_assert(!sodium_compare(A_sum, pk, crypto_scalarmult_BYTES));
+    ck_assert(!sodium_compare(A_sum, pk, crypto_sign_PUBLICKEYBYTES));
 }
 END_TEST
 
 START_TEST(ed25519_commit_sum)
 {
-    unsigned char R_sum[crypto_scalarmult_BYTES];
-    memcpy(R_sum, commit1, crypto_scalarmult_BYTES);
+    unsigned char R_sum[ed25519_cosi_COMMITBYTES];
+    memcpy(R_sum, commit1, ed25519_cosi_COMMITBYTES);
     ed25519_cosi_update_commit(R_sum, commit2);
     ed25519_cosi_update_commit(R_sum, commit3);
 
-    ck_assert(!sodium_compare(R_sum, commit, crypto_scalarmult_BYTES));
+    ck_assert(!sodium_compare(R_sum, commit, ed25519_cosi_COMMITBYTES));
 }
 END_TEST
 
 START_TEST(ed25519_challenge_create)
 {
-    unsigned char c[crypto_scalarmult_BYTES];
+    unsigned char c[ed25519_cosi_CHALLENGEBYTES];
     ed25519_cosi_challenge(c, commit, pk, message, m_len);
 
-    ck_assert(!sodium_compare(c, challenge, crypto_scalarmult_BYTES));
+    ck_assert(!sodium_compare(c, challenge, ed25519_cosi_CHALLENGEBYTES));
 }
 END_TEST
 
 START_TEST(ed25519_response_create)
 {
-    unsigned char s[crypto_scalarmult_BYTES];
+    unsigned char s[ed25519_cosi_RESPONSEBYTES];
     ed25519_cosi_response(s, challenge, sk1, r1);
 
-    ck_assert(!sodium_compare(s, s1, crypto_scalarmult_BYTES));
+    ck_assert(!sodium_compare(s, s1, ed25519_cosi_RESPONSEBYTES));
 }
 END_TEST
 
 START_TEST(ed25519_response_sum)
 {
-    unsigned char s_sum[crypto_scalarmult_BYTES];
-    memcpy(s_sum, s1, crypto_scalarmult_BYTES);
+    unsigned char s_sum[ed25519_cosi_RESPONSEBYTES];
+    memcpy(s_sum, s1, ed25519_cosi_RESPONSEBYTES);
     ed25519_cosi_update_response(s_sum, s2);
     ed25519_cosi_update_response(s_sum, s3);
 
-    ck_assert(!sodium_compare(s_sum, s, crypto_scalarmult_BYTES));
+    ck_assert(!sodium_compare(s_sum, s, ed25519_cosi_RESPONSEBYTES));
 }
 END_TEST
 
@@ -136,7 +147,7 @@ END_TEST
 
 START_TEST(ed25519_signature)
 {
-    size_t len = 2 * crypto_scalarmult_BYTES + 1;
+    size_t len = ed25519_cosi_RESPONSEBYTES + ed25519_cosi_COMMITBYTES + 1;
     unsigned char S[len];
     unsigned char Z[] = { 248 };
     ed25519_cosi_signature(S, commit, s, Z, 1);
@@ -158,6 +169,7 @@ int main(void)
 
     suite_add_tcase(s1, tc1_1);
 
+    tcase_add_test(tc1_1, ed25519_commit_generate);
     tcase_add_test(tc1_1, ed25519_pk_sum);
     tcase_add_test(tc1_1, ed25519_commit_sum);
     tcase_add_test(tc1_1, ed25519_challenge_create);

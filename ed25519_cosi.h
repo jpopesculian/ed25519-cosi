@@ -7,6 +7,11 @@
 extern "C"{
 #endif
 
+#define ed25519_cosi_NONCEBYTES 32
+#define ed25519_cosi_COMMITBYTES 32
+#define ed25519_cosi_RESPONSEBYTES 32
+#define ed25519_cosi_CHALLENGEBYTES 32
+
 /*
  * Length of a Collective Signature mask in bytes
  *
@@ -17,8 +22,8 @@ extern "C"{
 /*
  * Commit to signature process
  *
- * @param R: public commitment to be sent to Leader [crypto_scalarmult_BYTES]
- * @param r: private nonce to be kept for signature generation later [crypto_core_ed25519_SCALARBYTES]
+ * @param R: public commitment to be sent to Leader [ed25519_cosi_COMMITBYTES]
+ * @param r: private nonce to be kept for signature generation later [ed25519_cosi_NONCEBYTES]
  * @returns void
  */
 void ed25519_cosi_commit(unsigned char *R, unsigned char *r);
@@ -26,8 +31,8 @@ void ed25519_cosi_commit(unsigned char *R, unsigned char *r);
 /*
  * Add public key to a collective public key
  *
- * @param A_sum: the sum of the public keys [crypto_scalarmult_BYTES]
- * @param A: a singular public key to add to the sum [crypto_scalarmult_BYTES]
+ * @param A_sum: the sum of the public keys [crypto_sign_PUBLICKEYBYTES]
+ * @param A: a singular public key to add to the sum [crypto_sign_PUBLICKEYBYTES]
  * @returns void
  */
 void ed25519_cosi_update_public_key(unsigned char *A_sum, unsigned const char *A);
@@ -35,8 +40,8 @@ void ed25519_cosi_update_public_key(unsigned char *A_sum, unsigned const char *A
 /*
  * Add commit message to commit sum
  *
- * @param R_sum: the sum of the commits [crypto_scalarmult_BYTES]
- * @param R: a singular commit to add to the sum [crypto_scalarmult_BYTES]
+ * @param R_sum: the sum of the commits [ed25519_cosi_COMMITBYTES]
+ * @param R: a singular commit to add to the sum [ed25519_cosi_COMMITBYTES]
  * @returns void
  */
 void ed25519_cosi_update_commit(unsigned char *R_sum, unsigned const char *R);
@@ -44,9 +49,9 @@ void ed25519_cosi_update_commit(unsigned char *R_sum, unsigned const char *R);
 /*
  * Create cosi challenge
  *
- * @param c: output of challenge [crypto_scalarmult_BYTES]
- * @param R: aggregate commitments [crypto_scalarmult_BYTES]
- * @param A: collective public key [crypto_scalarmult_BYTES]
+ * @param c: output of challenge [ed25519_cosi_CHALLENGEBYTES]
+ * @param R: aggregate commitments [ed25519_cosi_COMMITBYTES]
+ * @param A: collective public key [crypto_sign_PUBLICKEYBYTES]
  * @param M: message to be signed
  * @param m_len: length of message to be signed
  * @returns void
@@ -62,10 +67,10 @@ void ed25519_cosi_challenge(
 /*
  * Create cosi response (signature part)
  *
- * @param s: output of response [crypto_scalarmult_BYTES]
- * @param c: generated challenge [crypto_scalarmult_BYTES]
- * @param a: private key of participant [crypto_core_ed25519_SCALARBYTES]
- * @param r: private nonce of commitment [crypto_core_ed25519_SCALARBYTES]
+ * @param s: output of response [ed25519_cosi_RESPONSEBYTES]
+ * @param c: generated challenge [ed25519_cosi_CHALLENGEBYTES]
+ * @param a: private key of participant [crypto_sign_SECRETKEYBYTES]
+ * @param r: private nonce of commitment [ed25519_cosi_NONCEBYTES]
  * @returns void
  */
 void ed25519_cosi_response(
@@ -78,8 +83,8 @@ void ed25519_cosi_response(
 /*
  * Add signature parts to the collective signature parts
  *
- * @param s_sum: the sum of the signature parts [crypto_scalarmult_BYTES]
- * @param s: a signature part to add to the sum [crypto_scalarmult_BYTES]
+ * @param s_sum: the sum of the signature parts [ed25519_cosi_RESPONSEBYTES]
+ * @param s: a signature part to add to the sum [ed25519_cosi_RESPONSEBYTES]
  * @returns void
  */
 void ed25519_cosi_update_response(unsigned char *s_sum, unsigned const char *s);
@@ -115,9 +120,9 @@ void ed25519_cosi_mask_disable(unsigned char *Z, size_t which);
 /*
  * Put signature components togeter
  *
- * @param S: output of the signature [2 * crypt_scalarmult_BYTES + z_len]
- * @param R: aggregate commits [crypto_scalarmult_BYTES]
- * @param s_sum: aggregate responses [crypto_scalarmult_BYTES]
+ * @param S: output of the signature [ed25519_cosi_COMMITBYTES + ed25519_cosi_RESPONSEBYTES + z_len]
+ * @param R: aggregate commits [ed25519_cosi_COMMITBYTES]
+ * @param s_sum: aggregate responses [ed25519_cosi_RESPONSEBYTES]
  * @param Z: signing mask
  * @param z_len: length of signing mask
  * @return void
