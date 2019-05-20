@@ -51,18 +51,13 @@ unsigned const char s[] = {103, 78, 209, 5, 223, 34, 190, 255, 172, 247, 134, 24
 // signature
 unsigned const char sig[] = {217, 13, 12, 0, 199, 125, 36, 89, 35, 69, 125, 67, 180, 199, 148, 22, 179, 112, 251, 191, 83, 216, 114, 1, 112, 228, 135, 115, 175, 28, 15, 28, 103, 78, 209, 5, 223, 34, 190, 255, 172, 247, 134, 247, 149, 35, 227, 103, 16, 204, 56, 170, 140, 253, 158, 24, 107, 171, 239, 45, 16, 173, 103, 4, 248};
 
-unsigned const char* test_public_key(int n) {
-    printf("getting %d\n", n);
-    switch(n) {
-        case 0:
-            return pk1;
-        case 1:
-            return pk2;
-        case 2:
-            return pk3;
-        default:
-            return NULL;
-    }
+// public key db
+unsigned const char* public_key_db[32];
+void public_key_db_set(int k, unsigned const char* v) {
+    public_key_db[k] = v;
+}
+unsigned const char* public_key_db_get(int k) {
+    return public_key_db[k];
 }
 
 /* SIGNATURE GENERATION */
@@ -221,7 +216,162 @@ END_TEST
 
 START_TEST(ed25519_sig_valid)
 {
-    ck_assert(ed25519_cosi_valid_signature(message, m_len, pk, test_public_key, sig, 65, 3));
+    public_key_db_set(0, pk1);
+    public_key_db_set(1, pk2);
+    public_key_db_set(2, pk3);
+    ck_assert(ed25519_cosi_valid_signature(
+        message,
+        m_len,
+        pk,
+        public_key_db_get,
+        sig,
+        65,
+        3
+    ));
+}
+END_TEST
+
+START_TEST(ed25519_sig_random)
+{
+    // each participant generates keypairs
+
+    unsigned char tpk1[crypto_sign_PUBLICKEYBYTES];
+    unsigned char tsk1[crypto_sign_SECRETKEYBYTES];
+    crypto_sign_ed25519_keypair(tpk1, tsk1);
+
+    unsigned char tpk2[crypto_sign_PUBLICKEYBYTES];
+    unsigned char tsk2[crypto_sign_SECRETKEYBYTES];
+    crypto_sign_ed25519_keypair(tpk2, tsk2);
+
+    unsigned char tpk3[crypto_sign_PUBLICKEYBYTES];
+    unsigned char tsk3[crypto_sign_SECRETKEYBYTES];
+    crypto_sign_ed25519_keypair(tpk3, tsk3);
+
+    public_key_db_set(0, tpk1);
+    public_key_db_set(1, tpk2);
+    public_key_db_set(2, tpk3);
+
+    // aggergate key pairs
+
+    unsigned char A[crypto_sign_PUBLICKEYBYTES];
+    memcpy(A, tpk1, crypto_sign_PUBLICKEYBYTES);
+    ed25519_cosi_update_public_key(A, tpk2);
+    ed25519_cosi_update_public_key(A, tpk3);
+
+    // each participant generates commit
+
+    unsigned char tr1[ed25519_cosi_NONCEBYTES];
+    unsigned char tR1[ed25519_cosi_COMMITBYTES];
+    ed25519_cosi_commit(tR1, tr1);
+
+    unsigned char tr2[ed25519_cosi_NONCEBYTES];
+    unsigned char tR2[ed25519_cosi_COMMITBYTES];
+    ed25519_cosi_commit(tR2, tr2);
+
+    unsigned char tr3[ed25519_cosi_NONCEBYTES];
+    unsigned char tR3[ed25519_cosi_COMMITBYTES];
+    ed25519_cosi_commit(tR3, tr3);
+
+    // variables
+
+    unsigned char R[ed25519_cosi_COMMITBYTES];
+    unsigned char c[ed25519_cosi_CHALLENGEBYTES];
+    unsigned char s[ed25519_cosi_RESPONSEBYTES];
+    unsigned char s_sum[ed25519_cosi_RESPONSEBYTES];
+    size_t z_len = ed25519_cosi_mask_len(3);
+    unsigned char Z[ed25519_cosi_mask_len(3)];
+    size_t s_len = ed25519_cosi_sig_len_for_n(3);
+    unsigned char S[ed25519_cosi_sig_len_for_n(3)];
+
+    // == SCENARIO 3-of-3 ==
+
+    // aggregate commit
+    memcpy(R, tR1, ed25519_cosi_COMMITBYTES);
+    ed25519_cosi_update_commit(R, tR2);
+    ed25519_cosi_update_commit(R, tR3);
+
+    // challenge
+    ed25519_cosi_challenge(c, R, A, message, m_len);
+
+    // responses
+    ed25519_cosi_mask_init(Z, z_len);
+
+    ed25519_cosi_response(s, c, tsk1, tr1);
+    memcpy(s_sum, s, ed25519_cosi_RESPONSEBYTES);
+    ed25519_cosi_mask_enable(Z, 0);
+
+    ed25519_cosi_response(s, c, tsk2, tr2);
+    memcpy(s_sum, s, ed25519_cosi_RESPONSEBYTES);
+    ed25519_cosi_mask_enable(Z, 1);
+
+    ed25519_cosi_response(s, c, tsk3, tr3);
+    ed25519_cosi_update_response(s_sum, s);
+    ed25519_cosi_mask_enable(Z, 2);
+
+    // generate signature
+    ed25519_cosi_signature(S, R, s_sum, Z, z_len);
+
+    // verify signature
+    ck_assert_int_eq(ed25519_cosi_num_signatures(S, 3), 3);
+    ck_assert(ed25519_cosi_did_sign(S, 0));
+    ck_assert(ed25519_cosi_did_sign(S, 1));
+    ck_assert(ed25519_cosi_did_sign(S, 2));
+    ed25519_cosi_valid_signature(message, m_len, A, public_key_db_get, S, s_len, 3);
+
+    // == SCENARIO 2-of-3 (participants 1 and 3) ==
+
+    // aggregate commit
+    memcpy(R, tR1, ed25519_cosi_COMMITBYTES);
+    ed25519_cosi_update_commit(R, tR3);
+
+    // challenge
+    ed25519_cosi_challenge(c, R, A, message, m_len);
+
+    // responses
+    ed25519_cosi_mask_init(Z, z_len);
+
+    ed25519_cosi_response(s, c, tsk1, tr1);
+    memcpy(s_sum, s, ed25519_cosi_RESPONSEBYTES);
+    ed25519_cosi_mask_enable(Z, 0);
+
+    ed25519_cosi_response(s, c, tsk3, tr3);
+    ed25519_cosi_update_response(s_sum, s);
+    ed25519_cosi_mask_enable(Z, 2);
+
+    // generate signature
+    ed25519_cosi_signature(S, R, s_sum, Z, z_len);
+
+    // verify signature
+    ck_assert_int_eq(ed25519_cosi_num_signatures(S, 3), 2);
+    ck_assert(ed25519_cosi_did_sign(S, 0));
+    ck_assert(!ed25519_cosi_did_sign(S, 1));
+    ck_assert(ed25519_cosi_did_sign(S, 2));
+    ed25519_cosi_valid_signature(message, m_len, A, public_key_db_get, S, s_len, 3);
+
+    // == SCENARIO 1-of-3 (participant 1) ==
+
+    // aggregate commit
+    memcpy(R, tR1, ed25519_cosi_COMMITBYTES);
+
+    // challenge
+    ed25519_cosi_challenge(c, R, A, message, m_len);
+
+    // responses
+    ed25519_cosi_mask_init(Z, z_len);
+
+    ed25519_cosi_response(s, c, tsk1, tr1);
+    memcpy(s_sum, s, ed25519_cosi_RESPONSEBYTES);
+    ed25519_cosi_mask_enable(Z, 0);
+
+    // generate signature
+    ed25519_cosi_signature(S, R, s_sum, Z, z_len);
+
+    // verify signature
+    ck_assert_int_eq(ed25519_cosi_num_signatures(S, 3), 1);
+    ck_assert(ed25519_cosi_did_sign(S, 0));
+    ck_assert(!ed25519_cosi_did_sign(S, 1));
+    ck_assert(!ed25519_cosi_did_sign(S, 2));
+    ed25519_cosi_valid_signature(message, m_len, A, public_key_db_get, S, s_len, 3);
 }
 END_TEST
 
@@ -255,6 +405,7 @@ int main(void)
     tcase_add_test(tc1_2, ed25519_sig_did_sign);
     tcase_add_test(tc1_2, ed25519_num_sigs);
     tcase_add_test(tc1_2, ed25519_sig_valid);
+    tcase_add_test(tc1_2, ed25519_sig_random);
 
     printf("\n");
     srunner_run_all(sr, CK_ENV);
