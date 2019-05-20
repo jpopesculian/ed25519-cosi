@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <sodium.h>
 
 #ifndef ED25519_COSI_H
 #define ED25519_COSI_H
@@ -9,11 +10,13 @@
 extern "C"{
 #endif
 
+typedef unsigned const char* (*get_public_key_fn)(int);
+
 #define ed25519_cosi_NONCEBYTES 32
 #define ed25519_cosi_COMMITBYTES 32
 #define ed25519_cosi_CHALLENGEBYTES 32
 #define ed25519_cosi_RESPONSEBYTES 32
-#define ed25519_cosi_SIGBYTES ed25519_cosi_COMMITBYTES + ed25519_cosi_RESPONSEBYTES
+#define ed25519_cosi_BASESIGBYTES ed25519_cosi_COMMITBYTES + ed25519_cosi_RESPONSEBYTES
 
 /*
  * Length of a Collective Signature mask in bytes
@@ -35,6 +38,25 @@ extern "C"{
  * @param which: the paritipant id (0 indexed)
  */
 #define ed25519_cosi_mask_bit(which) (1 << (which & 7))
+
+/*
+ * Get the byte length of a cosi signature with a mask of length z_len
+ *
+ * @param z_len: the length of the mask in bytes
+ */
+#define ed25519_cosi_sig_len(z_len) ed25519_cosi_BASESIGBYTES + z_len
+/*
+ * Get the byte length of a cosi signature with n number of participants
+ *
+ * @param z_len: the total number of participants
+ */
+#define ed25519_cosi_sig_len_for_n(n) ed25519_cosi_sig_len(ed25519_cosi_mask_len(n))
+
+
+/*
+ * A crypto_core_ed25519_add identity element (initialize aggregate public keys)
+ */
+extern unsigned const char ed25519_cosi_SC_ONE[crypto_scalarmult_ed25519_BYTES];
 
 /* ==================== *
  * SIGNATURE GENERATION *
@@ -141,7 +163,7 @@ void ed25519_cosi_mask_disable(unsigned char *Z, uint32_t which);
 /*
  * Put signature components togeter
  *
- * @param S: output of the signature [ed25519_cosi_SIGBYTES + z_len]
+ * @param S: output of the signature [ed25519_cosi_sig_len(z_len)]
  * @param R: aggregate commits [ed25519_cosi_COMMITBYTES]
  * @param s_sum: aggregate responses [ed25519_cosi_RESPONSEBYTES]
  * @param Z: signing mask
@@ -172,7 +194,7 @@ bool ed25519_cosi_valid_signature_len(size_t len, uint32_t n);
 /*
  * Query signature to see if participant signed the signature
  *
- * @param S: signature [ed25519_cosi_SIGBYTES + mask_len]
+ * @param S: signature [ed25519_cosi_sig_len_for_n(n > which)]
  * @param which: participant number to check (0 indexed)
  * @return true if enabled
  */
@@ -181,11 +203,31 @@ bool ed25519_cosi_did_sign(unsigned const char *S, uint32_t which);
 /*
  * Query signature to see if participant signed the signature
  *
- * @param S: signature [ed25519_cosi_SIGBYTES + mask_len]
+ * @param S: signature [ed25519_cosi_sig_len_for_n(n)]
  * @param n: total number of particants
  * @return number of participants who signed (m)
  */
 uint32_t ed25519_cosi_num_signatures(unsigned const char *S, uint32_t n);
+
+/*
+ * Check if signature valid
+ *
+ * @param M: Message that was signed
+ * @param m_len: Length of signed message
+ * @param S: signature [ed25519_cosi_sig_len_for_n(n)]
+ * @param s_len: Length of signature
+ * @param n: Number of participants
+ * @return true if valid
+ */
+bool ed25519_cosi_valid_signature(
+    unsigned const char *M,
+    size_t m_len,
+    unsigned const char *A,
+    get_public_key_fn get_a,
+    unsigned const char *S,
+    size_t s_len,
+    uint32_t n
+);
 
 #ifdef __cplusplus
 }

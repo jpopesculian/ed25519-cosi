@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <sodium.h>
 #include <string.h>
 #include <check.h>
 #include "ed25519_cosi.h"
@@ -52,6 +51,20 @@ unsigned const char s[] = {103, 78, 209, 5, 223, 34, 190, 255, 172, 247, 134, 24
 // signature
 unsigned const char sig[] = {217, 13, 12, 0, 199, 125, 36, 89, 35, 69, 125, 67, 180, 199, 148, 22, 179, 112, 251, 191, 83, 216, 114, 1, 112, 228, 135, 115, 175, 28, 15, 28, 103, 78, 209, 5, 223, 34, 190, 255, 172, 247, 134, 247, 149, 35, 227, 103, 16, 204, 56, 170, 140, 253, 158, 24, 107, 171, 239, 45, 16, 173, 103, 4, 248};
 
+unsigned const char* test_public_key(int n) {
+    printf("getting %d\n", n);
+    switch(n) {
+        case 0:
+            return pk1;
+        case 1:
+            return pk2;
+        case 2:
+            return pk3;
+        default:
+            return NULL;
+    }
+}
+
 /* SIGNATURE GENERATION */
 
 START_TEST(ed25519_commit_generate)
@@ -68,7 +81,8 @@ END_TEST
 START_TEST(ed25519_pk_sum)
 {
     unsigned char A_sum[crypto_sign_PUBLICKEYBYTES];
-    memcpy(A_sum, pk1, crypto_sign_PUBLICKEYBYTES);
+    memcpy(A_sum, ed25519_cosi_SC_ONE, crypto_sign_PUBLICKEYBYTES);
+    ed25519_cosi_update_public_key(A_sum, pk1);
     ed25519_cosi_update_public_key(A_sum, pk2);
     ed25519_cosi_update_public_key(A_sum, pk3);
 
@@ -79,7 +93,8 @@ END_TEST
 START_TEST(ed25519_commit_sum)
 {
     unsigned char R_sum[ed25519_cosi_COMMITBYTES];
-    memcpy(R_sum, commit1, ed25519_cosi_COMMITBYTES);
+    memcpy(R_sum, ed25519_cosi_SC_ONE, ed25519_cosi_COMMITBYTES);
+    ed25519_cosi_update_commit(R_sum, commit1);
     ed25519_cosi_update_commit(R_sum, commit2);
     ed25519_cosi_update_commit(R_sum, commit3);
 
@@ -108,7 +123,8 @@ END_TEST
 START_TEST(ed25519_response_sum)
 {
     unsigned char s_sum[ed25519_cosi_RESPONSEBYTES];
-    memcpy(s_sum, s1, ed25519_cosi_RESPONSEBYTES);
+    memset(s_sum, 0, ed25519_cosi_RESPONSEBYTES);
+    ed25519_cosi_update_response(s_sum, s1);
     ed25519_cosi_update_response(s_sum, s2);
     ed25519_cosi_update_response(s_sum, s3);
 
@@ -157,7 +173,7 @@ END_TEST
 
 START_TEST(ed25519_signature)
 {
-    size_t len = ed25519_cosi_SIGBYTES + 1;
+    size_t len = ed25519_cosi_BASESIGBYTES + 1;
     unsigned char S[len];
     unsigned char Z[] = { 248 };
     ed25519_cosi_signature(S, commit, s, Z, 1);
@@ -170,10 +186,10 @@ END_TEST
 
 START_TEST(ed25519_check_signature_len)
 {
-    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_SIGBYTES + 2, 10));
-    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_SIGBYTES + 1, 8));
-    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_SIGBYTES + 1, 1));
-    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_SIGBYTES + 3, 20));
+    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_BASESIGBYTES + 2, 10));
+    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_BASESIGBYTES + 1, 8));
+    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_BASESIGBYTES + 1, 1));
+    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_BASESIGBYTES + 3, 20));
 }
 END_TEST
 
@@ -189,17 +205,23 @@ START_TEST(ed25519_num_sigs)
 {
     ck_assert_int_eq(ed25519_cosi_num_signatures(sig, 3), 3);
 
-    unsigned char test_sig[ed25519_cosi_SIGBYTES + 1];
-    memcpy(test_sig, sig, ed25519_cosi_SIGBYTES + 1);
+    unsigned char test_sig[ed25519_cosi_BASESIGBYTES + 1];
+    memcpy(test_sig, sig, ed25519_cosi_BASESIGBYTES + 1);
 
-    ed25519_cosi_mask_disable(test_sig + ed25519_cosi_SIGBYTES, 0);
+    ed25519_cosi_mask_disable(test_sig + ed25519_cosi_BASESIGBYTES, 0);
     ck_assert_int_eq(ed25519_cosi_num_signatures(test_sig, 3), 2);
 
-    ed25519_cosi_mask_disable(test_sig + ed25519_cosi_SIGBYTES, 1);
+    ed25519_cosi_mask_disable(test_sig + ed25519_cosi_BASESIGBYTES, 1);
     ck_assert_int_eq(ed25519_cosi_num_signatures(test_sig, 3), 1);
 
-    ed25519_cosi_mask_disable(test_sig + ed25519_cosi_SIGBYTES, 2);
+    ed25519_cosi_mask_disable(test_sig + ed25519_cosi_BASESIGBYTES, 2);
     ck_assert_int_eq(ed25519_cosi_num_signatures(test_sig, 3), 0);
+}
+END_TEST
+
+START_TEST(ed25519_sig_valid)
+{
+    ck_assert(ed25519_cosi_valid_signature(message, m_len, pk, test_public_key, sig, 65, 3));
 }
 END_TEST
 
@@ -232,6 +254,7 @@ int main(void)
     tcase_add_test(tc1_2, ed25519_check_signature_len);
     tcase_add_test(tc1_2, ed25519_sig_did_sign);
     tcase_add_test(tc1_2, ed25519_num_sigs);
+    tcase_add_test(tc1_2, ed25519_sig_valid);
 
     printf("\n");
     srunner_run_all(sr, CK_ENV);
