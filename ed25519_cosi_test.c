@@ -52,6 +52,8 @@ unsigned const char s[] = {103, 78, 209, 5, 223, 34, 190, 255, 172, 247, 134, 24
 // signature
 unsigned const char sig[] = {217, 13, 12, 0, 199, 125, 36, 89, 35, 69, 125, 67, 180, 199, 148, 22, 179, 112, 251, 191, 83, 216, 114, 1, 112, 228, 135, 115, 175, 28, 15, 28, 103, 78, 209, 5, 223, 34, 190, 255, 172, 247, 134, 247, 149, 35, 227, 103, 16, 204, 56, 170, 140, 253, 158, 24, 107, 171, 239, 45, 16, 173, 103, 4, 248};
 
+/* SIGNATURE GENERATION */
+
 START_TEST(ed25519_commit_generate)
 {
     unsigned char R[ed25519_cosi_COMMITBYTES];
@@ -139,6 +141,14 @@ START_TEST(ed25519_mask_creation)
     res[1] = 243;
     ck_assert(!memcmp(Z, res, 2));
 
+    ed25519_cosi_mask_enable(Z, 10);
+    res[1] = 243;
+    ck_assert(!memcmp(Z, res, 2));
+
+    ed25519_cosi_mask_disable(Z, 10);
+    res[1] = 247;
+    ck_assert(!memcmp(Z, res, 2));
+
     ed25519_cosi_mask_disable(Z, 10);
     res[1] = 247;
     ck_assert(!memcmp(Z, res, 2));
@@ -147,7 +157,7 @@ END_TEST
 
 START_TEST(ed25519_signature)
 {
-    size_t len = ed25519_cosi_RESPONSEBYTES + ed25519_cosi_COMMITBYTES + 1;
+    size_t len = ed25519_cosi_SIGBYTES + 1;
     unsigned char S[len];
     unsigned char Z[] = { 248 };
     ed25519_cosi_signature(S, commit, s, Z, 1);
@@ -156,18 +166,59 @@ START_TEST(ed25519_signature)
 }
 END_TEST
 
+/* SIGNATURE VERIFICATION */
+
+START_TEST(ed25519_check_signature_len)
+{
+    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_SIGBYTES + 2, 10));
+    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_SIGBYTES + 1, 8));
+    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_SIGBYTES + 1, 1));
+    ck_assert(ed25519_cosi_valid_signature_len(ed25519_cosi_SIGBYTES + 3, 20));
+}
+END_TEST
+
+START_TEST(ed25519_sig_did_sign)
+{
+    ck_assert(ed25519_cosi_did_sign(sig, 0));
+    ck_assert(ed25519_cosi_did_sign(sig, 2));
+    ck_assert(!ed25519_cosi_did_sign(sig, 3));
+}
+END_TEST
+
+START_TEST(ed25519_num_sigs)
+{
+    ck_assert_int_eq(ed25519_cosi_num_signatures(sig, 3), 3);
+
+    unsigned char test_sig[ed25519_cosi_SIGBYTES + 1];
+    memcpy(test_sig, sig, ed25519_cosi_SIGBYTES + 1);
+
+    ed25519_cosi_mask_disable(test_sig + ed25519_cosi_SIGBYTES, 0);
+    ck_assert_int_eq(ed25519_cosi_num_signatures(test_sig, 3), 2);
+
+    ed25519_cosi_mask_disable(test_sig + ed25519_cosi_SIGBYTES, 1);
+    ck_assert_int_eq(ed25519_cosi_num_signatures(test_sig, 3), 1);
+
+    ed25519_cosi_mask_disable(test_sig + ed25519_cosi_SIGBYTES, 2);
+    ck_assert_int_eq(ed25519_cosi_num_signatures(test_sig, 3), 0);
+}
+END_TEST
+
+/* TEST RUNNER */
+
 int main(void)
 {
     if (sodium_init() < 0) {
         return 1;
     }
 
-    Suite *s1 = suite_create("Core");
-    TCase *tc1_1 = tcase_create("Core");
+    Suite *s1 = suite_create("Ed25519 Collective Signing");
+    TCase *tc1_1 = tcase_create("Generation");
+    TCase *tc1_2 = tcase_create("Verification");
     SRunner *sr = srunner_create(s1);
     int nf;
 
     suite_add_tcase(s1, tc1_1);
+    suite_add_tcase(s1, tc1_2);
 
     tcase_add_test(tc1_1, ed25519_commit_generate);
     tcase_add_test(tc1_1, ed25519_pk_sum);
@@ -177,6 +228,10 @@ int main(void)
     tcase_add_test(tc1_1, ed25519_response_sum);
     tcase_add_test(tc1_1, ed25519_mask_creation);
     tcase_add_test(tc1_1, ed25519_signature);
+
+    tcase_add_test(tc1_2, ed25519_check_signature_len);
+    tcase_add_test(tc1_2, ed25519_sig_did_sign);
+    tcase_add_test(tc1_2, ed25519_num_sigs);
 
     printf("\n");
     srunner_run_all(sr, CK_ENV);

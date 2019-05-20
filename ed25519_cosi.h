@@ -1,4 +1,6 @@
 #include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #ifndef ED25519_COSI_H
 #define ED25519_COSI_H
@@ -9,8 +11,9 @@ extern "C"{
 
 #define ed25519_cosi_NONCEBYTES 32
 #define ed25519_cosi_COMMITBYTES 32
-#define ed25519_cosi_RESPONSEBYTES 32
 #define ed25519_cosi_CHALLENGEBYTES 32
+#define ed25519_cosi_RESPONSEBYTES 32
+#define ed25519_cosi_SIGBYTES ed25519_cosi_COMMITBYTES + ed25519_cosi_RESPONSEBYTES
 
 /*
  * Length of a Collective Signature mask in bytes
@@ -18,6 +21,24 @@ extern "C"{
  * @param len: total number of participants
  */
 #define ed25519_cosi_mask_len(len) ((len + 7) >> 3)
+
+/*
+ * Get the byte offset of the participant in the mask
+ *
+ * @param which: the paritipant id (0 indexed)
+ */
+#define ed25519_cosi_mask_byte(which) (which >> 3)
+
+/*
+ * Get the bit offset of the participant in the mask
+ *
+ * @param which: the paritipant id (0 indexed)
+ */
+#define ed25519_cosi_mask_bit(which) (1 << (which & 7))
+
+/* ==================== *
+ * SIGNATURE GENERATION *
+ * ==================== */
 
 /*
  * Commit to signature process
@@ -102,25 +123,25 @@ void ed25519_cosi_mask_init(unsigned char *Z, size_t z_len);
  * Enable a participant as a cosigner
  *
  * @param Z: the mask
- * @param which: the participant number to enable
+ * @param which: the participant number to enable (0 indexed)
  * @return void
  */
-void ed25519_cosi_mask_enable(unsigned char *Z, size_t which);
+void ed25519_cosi_mask_enable(unsigned char *Z, uint32_t which);
 
 
 /*
  * Disable a participant as a cosigner
  *
  * @param Z: the mask
- * @param which: the participant number to enable
+ * @param which: the participant number to enable (0 indexed)
  * @return void
  */
-void ed25519_cosi_mask_disable(unsigned char *Z, size_t which);
+void ed25519_cosi_mask_disable(unsigned char *Z, uint32_t which);
 
 /*
  * Put signature components togeter
  *
- * @param S: output of the signature [ed25519_cosi_COMMITBYTES + ed25519_cosi_RESPONSEBYTES + z_len]
+ * @param S: output of the signature [ed25519_cosi_SIGBYTES + z_len]
  * @param R: aggregate commits [ed25519_cosi_COMMITBYTES]
  * @param s_sum: aggregate responses [ed25519_cosi_RESPONSEBYTES]
  * @param Z: signing mask
@@ -134,6 +155,37 @@ void ed25519_cosi_signature(
     unsigned const char *Z,
     size_t z_len
 );
+
+/* ====================== *
+ * SIGNATURE VERIFICATION *
+ * ====================== */
+
+/*
+ * Check length of signature
+ *
+ * @param len: length of signature
+ * @param n: number of participants in collective signing scheme
+ * @return true if valid length
+ */
+bool ed25519_cosi_valid_signature_len(size_t len, uint32_t n);
+
+/*
+ * Query signature to see if participant signed the signature
+ *
+ * @param S: signature [ed25519_cosi_SIGBYTES + mask_len]
+ * @param which: participant number to check (0 indexed)
+ * @return true if enabled
+ */
+bool ed25519_cosi_did_sign(unsigned const char *S, uint32_t which);
+
+/*
+ * Query signature to see if participant signed the signature
+ *
+ * @param S: signature [ed25519_cosi_SIGBYTES + mask_len]
+ * @param n: total number of particants
+ * @return number of participants who signed (m)
+ */
+uint32_t ed25519_cosi_num_signatures(unsigned const char *S, uint32_t n);
 
 #ifdef __cplusplus
 }
