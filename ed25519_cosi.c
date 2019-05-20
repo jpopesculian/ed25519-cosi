@@ -1,6 +1,4 @@
-#include <stdio.h>
 #include "ed25519_cosi.h"
-#include <sodium.h>
 #include <string.h>
 
 unsigned const char ed25519_cosi_SC_ONE[] = {

@@ -1,7 +1,5 @@
-#include <stdio.h>
-#include <string.h>
-#include <check.h>
 #include "ed25519_cosi.h"
+#include <check.h>
 
 // message
 unsigned const char message[] = {0, 1, 2, 3, 4, 5};
