@@ -1,6 +1,13 @@
 #include "ed25519_cosi.h"
 #include <string.h>
 
+unsigned const char ed25519_cosi_SC_ZERO[] = {
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+
 unsigned const char ed25519_cosi_SC_ONE[] = {
     1, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0,

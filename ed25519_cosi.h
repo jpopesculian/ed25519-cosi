@@ -52,9 +52,14 @@ typedef unsigned const char* (*get_public_key_fn)(int);
 
 
 /*
- * A crypto_core_ed25519_add identity element (initialize aggregate public keys)
+ * A little-endian 32-bit '1' scalar
  */
 extern unsigned const char ed25519_cosi_SC_ONE[crypto_scalarmult_ed25519_BYTES];
+
+/*
+ * A 32-bit '0' scalar
+ */
+extern unsigned const char ed25519_cosi_SC_ZERO[crypto_scalarmult_ed25519_BYTES];
 
 /* ==================== *
  * SIGNATURE GENERATION *
@@ -70,7 +75,7 @@ extern unsigned const char ed25519_cosi_SC_ONE[crypto_scalarmult_ed25519_BYTES];
 void ed25519_cosi_commit(unsigned char *R, unsigned char *r);
 
 /*
- * Add public key to a collective public key
+ * Add public key to a collective public key (init with '1')
  *
  * @param A_sum: the sum of the public keys [crypto_sign_ed25519_PUBLICKEYBYTES]
  * @param A: a singular public key to add to the sum [crypto_sign_ed25519_PUBLICKEYBYTES]
@@ -79,7 +84,7 @@ void ed25519_cosi_commit(unsigned char *R, unsigned char *r);
 void ed25519_cosi_update_public_key(unsigned char *A_sum, unsigned const char *A);
 
 /*
- * Add commit message to commit sum
+ * Add commit message to commit sum (init with '1')
  *
  * @param R_sum: the sum of the commits [ed25519_cosi_COMMITBYTES]
  * @param R: a singular commit to add to the sum [ed25519_cosi_COMMITBYTES]
@@ -122,7 +127,7 @@ void ed25519_cosi_response(
 );
 
 /*
- * Add signature parts to the collective signature parts
+ * Add signature parts to the collective signature parts (init with '0')
  *
  * @param s_sum: the sum of the signature parts [ed25519_cosi_RESPONSEBYTES]
  * @param s: a signature part to add to the sum [ed25519_cosi_RESPONSEBYTES]

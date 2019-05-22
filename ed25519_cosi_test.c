@@ -116,7 +116,7 @@ END_TEST
 START_TEST(ed25519_response_sum)
 {
     unsigned char s_sum[ed25519_cosi_RESPONSEBYTES];
-    memset(s_sum, 0, ed25519_cosi_RESPONSEBYTES);
+    memcpy(s_sum, ed25519_cosi_SC_ZERO, ed25519_cosi_RESPONSEBYTES);
     ed25519_cosi_update_response(s_sum, s1);
     ed25519_cosi_update_response(s_sum, s2);
     ed25519_cosi_update_response(s_sum, s3);
