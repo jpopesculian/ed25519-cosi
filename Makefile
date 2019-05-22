@@ -1,6 +1,9 @@
 CFLAGS=-Wall
-LDFLAGS=-lsodium
-TEST_FLAGS=-lcheck -pthread -lcheck_pic -pthread -lrt -lm -lsubunit
+LDFLAGS=
+
+TEST_CFLAGS=
+TEST_LDFLAGS=-lcheck -pthread -lcheck_pic -pthread -lrt -lm -lsubunit -lsodium
+
 CC = clang
 
 SRC = ed25519_cosi.c
@@ -23,7 +26,7 @@ clean:
 	rm -f $(OUT_TEST)
 
 build-check: build
-	$(CC) $(CFLAGS) -o $(OUT_TEST) $(SRC_TEST) $(SRC) $(LDFLAGS) $(TEST_FLAGS)
+	$(CC) $(CFLAGS) -o $(OUT_TEST) $(SRC_TEST) $(OUT) $(LDFLAGS) $(TEST_CFLAGS) $(TEST_LDFLAGS)
 
 check: build-check
 	./$(OUT_TEST)
