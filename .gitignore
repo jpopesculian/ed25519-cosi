@@ -1,2 +1,4 @@
 *.o
+*.a
+*.so
 ed25519_cosi_test

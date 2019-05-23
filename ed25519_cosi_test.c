@@ -391,20 +391,10 @@ END_TEST
 
 /* TEST RUNNER */
 
-int main(void)
-{
-    if (sodium_init() < 0) {
-        return 1;
-    }
-
+Suite * core_suite(void) {
     Suite *s1 = suite_create("Ed25519 Collective Signing");
     TCase *tc1_1 = tcase_create("Generation");
     TCase *tc1_2 = tcase_create("Verification");
-    SRunner *sr = srunner_create(s1);
-    int nf;
-
-    suite_add_tcase(s1, tc1_1);
-    suite_add_tcase(s1, tc1_2);
 
     tcase_add_test(tc1_1, ed25519_commit_generate);
     tcase_add_test(tc1_1, ed25519_pk_sum);
@@ -423,8 +413,25 @@ int main(void)
     tcase_add_test(tc1_2, ed25519_sig_s_invalid);
     tcase_add_test(tc1_2, ed25519_sig_random);
 
+    suite_add_tcase(s1, tc1_1);
+    suite_add_tcase(s1, tc1_2);
+
+    return s1;
+}
+
+int main(void)
+{
+    int nf;
+
+    if (sodium_init() < 0) {
+        return 1;
+    }
+
+    Suite *s1 =  core_suite();
+    SRunner *sr = srunner_create(s1);
+
     printf("\n");
-    srunner_run_all(sr, CK_ENV);
+    srunner_run_all(sr, CK_NORMAL);
     nf = srunner_ntests_failed(sr);
     srunner_free(sr);
     printf("\n");

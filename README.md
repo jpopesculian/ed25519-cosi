@@ -4,26 +4,13 @@ Under Development and sparsely tested, please use at your own risk.
 
 ## Installation
 
-### Dependencies
-
-Only dependency is `libsodium` (tested with version 1.0.17)
-
-### Build
+The only dependency is `libsodium` (tested with version 1.0.17).
 
 ```bash
 git clone https://github.com/jpopesculian/ed25519-cosi.git $INSTALL_DIR
 cd $INSTALL_DIR
 make
-```
-
-### Install
-
-To use, include the header file: `#include <ed25519_cosi.h>` and the compile
-with the appropriate `LD_FLAGS` (remember to include `libsodium`). For example
-if compiling, `test.c` to `myprog`
-
-```bash
-gcc -o myprog test.c $INSTALL_DIR/somelib.o -I$INSTALL_DIR -lsodium
+sudo make install
 ```
 
 ## Testing
@@ -42,6 +29,11 @@ Ford's draft at
 This library includes both creating and verifying collective signatures.
 
 ### Signature Generation
+
+#### Include
+
+Include `<ed25519_cosi.h>` header in your source file and compile with
+`-led25519_cosi` and `-lsodium` ld flags.
 
 #### Setup
 
