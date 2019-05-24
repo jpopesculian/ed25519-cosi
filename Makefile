@@ -1,61 +1,77 @@
-CFLAGS=-Wall -I/usr/local/include -I. -fPIC
-LDFLAGS=
-
-TEST_CFLAGS=
-TEST_LDFLAGS=-L. -lsodium -lcheck -pthread -lcheck_pic -pthread -lrt -lm -lsubunit -led25519_cosi
-
 CC = clang
 AR = ar
 
-NAME = ed25519_cosi
-SRC = $(NAME).c
-OUT = $(NAME).o
-OUT_SHARED = lib$(NAME).so
-OUT_STATIC = lib$(NAME).a
-HEADER = $(NAME).h
+ROOT := .
+OBJ := $(ROOT)
+SRC := $(ROOT)
+TEST_SRC := $(ROOT)/tests
+TEST_OBJ := $(ROOT)/tests
+GLOBAL_LIB = /usr/local/lib
+GLOBAL_INCLUDE = /usr/local/include
 
-TEST_NAME = ed25519_cosi_test
-SRC_TEST = $(TEST_NAME).c
-OUT_TEST = $(TEST_NAME)
-OUT_TEST_STATIC = $(TEST_NAME)_static
+NAME := ed25519_cosi
+SOURCES := $(wildcard $(SRC)/*.c)
+HEADERS := $(wildcard $(SRC)/*.h)
+TEST_SOURCES := $(wildcard $(TEST_SRC)/*.c)
 
-TEST_SRC = ed25519_cosi_test.c
+OBJECTS := $(patsubst $(SRC)/%.c, $(OBJ)/%.o, $(SOURCES))
+TEST_OBJECTS := $(patsubst $(TEST_SRC)/%.c, $(TEST_OBJ)/%.o, $(TEST_SOURCES))
+
+SHARED := $(OBJ)/lib$(NAME).so
+ARCHIVE := $(OBJ)/lib$(NAME).a
+
+CFLAGS=-Wall -I/usr/local/include -I$(ROOT) -fPIC
+LDFLAGS=
+
+TEST_CFLAGS=
+TEST_LDFLAGS=-L$(ROOT) -lsodium -lcheck -pthread -lcheck_pic -pthread -lrt -lm -lsubunit -led25519_cosi
 
 .PHONY:all clean watch
 
-all: build-shared build-static
+all: build-shared build-archive
 
-build:
-	$(CC) $(CFLAGS) -o $(OUT) -c $(SRC) $(LDFLAGS)
+build: $(OBJECTS)
 
-build-shared: build
-	$(CC) -shared -o $(OUT_SHARED) $(OUT)
+check: $(patsubst $(TEST_OBJ)/%.o, check-%, $(TEST_OBJECTS))
 
-build-static: build
-	$(AR) rcs $(OUT_STATIC) $(OUT)
+build-shared: $(SHARED)
 
-install: uninstall
-	cp $(HEADER) /usr/local/include/
-	cp $(OUT_STATIC) /usr/local/lib/
-	cp $(OUT_SHARED) /usr/local/lib/
+build-archive: $(ARCHIVE)
+
+build-tests: $(TEST_OBJECTS)
+
+$(OBJ)/%.o: $(SRC)/%.c
+	$(CC) $(CFLAGS) -o $@ -c $< $(LDFLAGS)
+
+$(SHARED): $(OBJECTS)
+	$(CC) -shared -o $@ $<
+
+$(ARCHIVE): $(OBJECTS)
+	$(AR) rcs $@ $<
+
+install: uninstall build-shared build-archive
+	cp $(HEADERS) $(GLOBAL_INCLUDE)
+	cp $(SHARED) $(GLOBAL_LIB)
+	cp $(ARCHIVE) $(GLOBAL_LIB)
 
 uninstall:
-	rm -f /usr/local/include/$(HEADER)
-	rm -f /usr/local/lib/$(OUT_STATIC)
-	rm -f /usr/local/lib/$(OUT_SHARED)
+	rm -f $(patsubst $(SRC)/%.h, $(GLOBAL_INCLUDE)/%.h, $(HEADERS))
+	rm -f $(patsubst $(OBJ)/%.so, $(GLOBAL_LIB)/%.so, $(SHARED))
+	rm -f $(patsubst $(OBJ)/%.a, $(GLOBAL_LIB)/%.a, $(ARCHIVE))
 
 clean:
-	rm -f $(OUT)
-	rm -f $(OUT_SHARED)
-	rm -f $(OUT_TEST)
-	rm -f $(OUT_STATIC)
-	rm -f $(OUT_TEST_STATIC)
+	rm -f $(OBJECTS)
+	rm -f $(SHARED)
+	rm -f $(ARCHIVE)
 
-build-check: build-shared
-	$(CC) $(CFLAGS) -o $(OUT_TEST) $(SRC_TEST) $(LDFLAGS) $(TEST_CFLAGS) $(TEST_LDFLAGS)
+$(TEST_OBJ)/%.o: $(TEST_SRC)/%.c $(SHARED)
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) $(TEST_CFLAGS) $(TEST_LDFLAGS)
 
-check: build-check
-	LD_LIBRARY_PATH=. ./$(OUT_TEST)
+check-%: $(TEST_OBJ)/%.o
+	LD_LIBRARY_PATH=$(ROOT) $<
+
+clean-tests:
+	rm -f $(TEST_OBJECTS)
 
 watch:
-	./watch
+	@./.watch

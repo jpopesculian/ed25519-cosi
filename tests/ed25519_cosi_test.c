@@ -1,4 +1,4 @@
-#include "ed25519_cosi.h"
+#include "../ed25519_cosi.h"
 #include <check.h>
 
 // message
