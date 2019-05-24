@@ -54,9 +54,6 @@ clean:
 build-check: build-shared
 	$(CC) $(CFLAGS) -o $(OUT_TEST) $(SRC_TEST) $(LDFLAGS) $(TEST_CFLAGS) $(TEST_LDFLAGS)
 
-build-static-check: build-static
-	$(MUSL) $(STATIC_FLAGS) $(CFLAGS) -o $(OUT_TEST_STATIC) $(SRC_TEST) $(LDFLAGS) $(TEST_CFLAGS) $(TEST_LDFLAGS)
-
 check: build-check
 	LD_LIBRARY_PATH=. ./$(OUT_TEST)
 
