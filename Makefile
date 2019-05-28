@@ -1,5 +1,7 @@
-CC = clang
-AR = ar
+ifeq ($(origin CC),default)
+	CC = gcc
+endif
+AR := ar
 
 ROOT := .
 OBJ := $(ROOT)
@@ -8,6 +10,8 @@ TEST_SRC := $(ROOT)/tests
 TEST_OBJ := $(ROOT)/tests
 GLOBAL_LIB = /usr/local/lib
 GLOBAL_INCLUDE = /usr/local/include
+INSTALL_LIB ?= $(GLOBAL_LIB)
+INSTALL_INCLUDE ?= $(GLOBAL_INCLUDE)
 
 NAME := ed25519_cosi
 SOURCES := $(wildcard $(SRC)/*.c)
@@ -20,11 +24,11 @@ TEST_OBJECTS := $(patsubst $(TEST_SRC)/%.c, $(TEST_OBJ)/%.o, $(TEST_SOURCES))
 SHARED := $(OBJ)/lib$(NAME).so
 ARCHIVE := $(OBJ)/lib$(NAME).a
 
-CFLAGS=-Wall -I/usr/local/include -I$(ROOT) -fPIC
+CFLAGS=-Wall -I$(GLOBAL_INCLUDE) -I$(ROOT) -fPIC
 LDFLAGS=
 
 TEST_CFLAGS=
-TEST_LDFLAGS=-L$(ROOT) -lsodium -lcheck -pthread -lcheck_pic -pthread -lrt -lm -lsubunit -led25519_cosi
+TEST_LDFLAGS=-L$(ROOT) -lsodium -lcheck -pthread -lrt -lm -lsubunit -led25519_cosi
 
 .PHONY:all clean watch
 
@@ -50,14 +54,14 @@ $(ARCHIVE): $(OBJECTS)
 	$(AR) rcs $@ $<
 
 install: uninstall build-shared build-archive
-	cp $(HEADERS) $(GLOBAL_INCLUDE)
-	cp $(SHARED) $(GLOBAL_LIB)
-	cp $(ARCHIVE) $(GLOBAL_LIB)
+	cp $(HEADERS) $(INSTALL_INCLUDE)
+	cp $(SHARED) $(INSTALL_LIB)
+	cp $(ARCHIVE) $(INSTALL_LIB)
 
 uninstall:
-	rm -f $(patsubst $(SRC)/%.h, $(GLOBAL_INCLUDE)/%.h, $(HEADERS))
-	rm -f $(patsubst $(OBJ)/%.so, $(GLOBAL_LIB)/%.so, $(SHARED))
-	rm -f $(patsubst $(OBJ)/%.a, $(GLOBAL_LIB)/%.a, $(ARCHIVE))
+	rm -f $(patsubst $(SRC)/%.h, $(INSTALL_INCLUDE)/%.h, $(HEADERS))
+	rm -f $(patsubst $(OBJ)/%.so, $(INSTALL_LIB)/%.so, $(SHARED))
+	rm -f $(patsubst $(OBJ)/%.a, $(INSTALL_LIB)/%.a, $(ARCHIVE))
 
 clean:
 	rm -f $(OBJECTS)
